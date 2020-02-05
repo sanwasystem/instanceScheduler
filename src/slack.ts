@@ -6,6 +6,13 @@ const lambda = new AWS.Lambda({ region: env.region });
 
 const send = async (message: string | object, channel: string): Promise<void> => {
   const text = typeof message === "object" ? JSON.stringify(message) : message;
+
+  // チャンネル名が空文字かnoneだったらSlackへの送信はスキップ
+  if (channel === "" || channel === "none") {
+    console.log(text);
+    return;
+  }
+
   console.log(`Slackへ送信: channel=${channel}, message=${text}`);
   const payload = {
     text: text,
