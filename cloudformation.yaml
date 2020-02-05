@@ -11,7 +11,7 @@ Parameters:
     Description: "UTF Offset (ex: '9' in Japan)"
   RecordTTLInDays:
     Type: Number
-    Default: "1"
+    Default: "2"
     Description: DynamoDB TTL in Days
   SlackLambdaName:
     Type: String
@@ -165,6 +165,7 @@ Resources:
         S3Key: !Ref LambdaCodeKey
       Runtime: nodejs12.x
       Timeout: 300
+      MemorySize: 192
       Role: !GetAtt MyRole.Arn
       FunctionName: InstanceScheduler_TaskGenerator
       Description: "[InstanceScheduler] Task Generator"
@@ -209,6 +210,7 @@ Resources:
         S3Key: !Ref LambdaCodeKey
       Runtime: nodejs12.x
       Timeout: 300
+      MemorySize: 192
       Role: !GetAtt MyRole.Arn
       FunctionName: InstanceScheduler_Ticker
       Description: "[InstanceScheduler] Ticker"
@@ -253,6 +255,7 @@ Resources:
         S3Key: !Ref LambdaCodeKey
       Runtime: nodejs12.x
       Timeout: 300
+      MemorySize: 192
       Role: !GetAtt MyRole.Arn
       FunctionName: InstanceScheduler_TaskProcessor
       Description: "[InstanceScheduler] Task Processor"
