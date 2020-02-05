@@ -1,0 +1,104 @@
+{
+  "DBInstanceIdentifier": "hogehoge2",
+  "DBInstanceClass": "db.t3.xlarge",
+  "Engine": "sqlserver-se",
+  "DBInstanceStatus": "available",
+  "MasterUsername": "admin",
+  "Endpoint": {
+    "Address": "hogehoge2.abcdefghijkl.ap-northeast-1.rds.amazonaws.com",
+    "Port": 1433,
+    "HostedZoneId": "ZZZZZZZZZZZZZZ"
+  },
+  "AllocatedStorage": 50,
+  "InstanceCreateTime": "2019-11-21T04:11:19.997Z",
+  "PreferredBackupWindow": "18:17-18:47",
+  "BackupRetentionPeriod": 7,
+  "DBSecurityGroups": [],
+  "VpcSecurityGroups": [
+    {
+      "VpcSecurityGroupId": "sg-01234567890123456",
+      "Status": "active"
+    }
+  ],
+  "DBParameterGroups": [
+    {
+      "DBParameterGroupName": "hogehoge",
+      "ParameterApplyStatus": "in-sync"
+    }
+  ],
+  "AvailabilityZone": "ap-northeast-1a",
+  "DBSubnetGroup": {
+    "DBSubnetGroupName": "hogehoge_dev",
+    "DBSubnetGroupDescription": "hogehoge",
+    "VpcId": "vpc-12345678901234567",
+    "SubnetGroupStatus": "Complete",
+    "Subnets": [
+      {
+        "SubnetIdentifier": "subnet-1234567890abcdef0",
+        "SubnetAvailabilityZone": {
+          "Name": "ap-northeast-1c"
+        },
+        "SubnetStatus": "Active"
+      },
+      {
+        "SubnetIdentifier": "subnet-98765432109876543",
+        "SubnetAvailabilityZone": {
+          "Name": "ap-northeast-1a"
+        },
+        "SubnetStatus": "Active"
+      }
+    ]
+  },
+  "PreferredMaintenanceWindow": "wed:14:10-wed:14:40",
+  "PendingModifiedValues": {},
+  "LatestRestorableTime": "2020-01-30T07:53:01.000Z",
+  "MultiAZ": false,
+  "EngineVersion": "13.00.5426.0.v1",
+  "AutoMinorVersionUpgrade": false,
+  "ReadReplicaDBInstanceIdentifiers": [],
+  "ReadReplicaDBClusterIdentifiers": [],
+  "LicenseModel": "license-included",
+  "Iops": 1000,
+  "OptionGroupMemberships": [
+    {
+      "OptionGroupName": "sqlserver-hogehoge",
+      "Status": "in-sync"
+    }
+  ],
+  "CharacterSetName": "Japanese_CI_AS",
+  "PubliclyAccessible": true,
+  "StatusInfos": [],
+  "StorageType": "io1",
+  "DbInstancePort": 0,
+  "StorageEncrypted": true,
+  "KmsKeyId": "arn:aws:kms:ap-northeast-1:999999999999:key/11111111-1111-1111-1111-111111111111",
+  "DbiResourceId": "db-ZZZZZZZZZZZZZZZZZZZZZZZZZZ",
+  "CACertificateIdentifier": "rds-ca-2015",
+  "DomainMemberships": [],
+  "CopyTagsToSnapshot": true,
+  "MonitoringInterval": 60,
+  "EnhancedMonitoringResourceArn": "arn:aws:logs:ap-northeast-1:999999999999:log-group:RDSOSMetrics:log-stream:db-ZZZZZZZZZZZZZZZZZZZZZZZZZZ",
+  "MonitoringRoleArn": "arn:aws:iam::999999999999:role/rds-monitoring-role",
+  "DBInstanceArn": "arn:aws:rds:ap-northeast-1:999999999999:db:hogehoge2",
+  "Timezone": "Tokyo Standard Time",
+  "IAMDatabaseAuthenticationEnabled": false,
+  "PerformanceInsightsEnabled": false,
+  "EnabledCloudwatchLogsExports": [],
+  "ProcessorFeatures": [],
+  "DeletionProtection": true,
+  "AssociatedRoles": [],
+  "Tags": [
+    {
+      "Key": "Project",
+      "Value": "hogehoge"
+    },
+    {
+      "Key": "AutoStopSchedule",
+      "Value": "0 8 @ @ @"
+    }
+  ],
+  "Tag": {
+    "Project": "hogeFugaProject",
+    "AutoStopSchedule": "0 8 @ @ @"
+  }
+}

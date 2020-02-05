@@ -1,0 +1,11 @@
+{
+  "ec2ForceToReboot": false,
+  "key": "RegisterAmi_i-11111111111111111_2020-02-04T03:00:00+09:00",
+  "remainingRetryCount": 1,
+  "resourceId": "i-11111111111111111_2020",
+  "resourceType": "EC2",
+  "task": "RegisterAmi",
+  "scheduledTime": "2020-02-04T03:00:00+09:00",
+  "lastModified": "2020-02-03T17:06:04+09:00",
+  "TTL": 1580967615
+}

@@ -1,0 +1,271 @@
+# InstanceScheduler
+AWSTemplateFormatVersion: 2010-09-09
+Parameters: 
+  ScheduleTableName: 
+    Type: String
+    Default: 'InstanceScheduler'
+    Description: DynamoDB Table Name
+  utfOffset: 
+    Type: Number
+    Default: '9'
+    Description: "UTF Offset (ex: '9' in Japan)"
+  RecordTTLInDays:
+    Type: Number
+    Default: "1"
+    Description: DynamoDB TTL in Days
+  SlackLambdaName:
+    Type: String
+    Default: 'Slack_APIProxyV2'
+    Description: slack proxy lambda name
+  SlackChannel:
+    Type: String
+    Default: ''
+    Description: Slack Log Channel Name
+  SlackErrorChannel:
+    Type: String
+    Default: ''
+    Description: Slack Error Channel Name
+  AccountNickName:
+    Type: String
+    Default: "InstanceScheduler"
+    Description: Slack User Nme
+  SlackIcon:
+    Type: String
+    Default: cat
+    Description: Slack icon
+  LambdaCodeBucket:
+    Type: String
+    Default: public-sanwasystem
+    Description: S3 bucket name of Lambda deploy package
+  LambdaCodeKey:
+    Type: String
+    Default: 'instanceScheduler/lambda.zip'
+    Description: S3 key name of Lambda deploy package
+
+Resources:
+  MyRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: Lambda_InstanceScheduler
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - Effect: "Allow"
+            Principal: 
+              Service: "lambda.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        - PolicyName: EC2
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement: 
+              - Sid: startSstopMaangeAmi
+                Effect: Allow
+                Action:
+                  - 'ec2:DeregisterImage'
+                  - 'ec2:DeleteSnapshot'
+                  - 'ec2:StartInstances'
+                  - 'ec2:RegisterImage'
+                  - 'ec2:StopInstances'
+                  - 'ec2:CreateImage'
+                  - 'ec2:CreateTags'
+                  - 'ec2:CreateSnapshot'
+                Resource: '*'
+              - Sid: readonly
+                Effect: Allow
+                Action:
+                  - 'ec2:Describe*'
+                  - 'elasticloadbalancing:Describe*'
+                Resource: '*'
+              - Sid: cloudwatchReadonly
+                Effect: Allow
+                Action:
+                  - 'cloudwatch:ListMetrics'
+                  - 'cloudwatch:GetMetricStatistics'
+                  - 'cloudwatch:Describe*'
+                Resource: '*'
+        - PolicyName: CloudwatchLogs
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement: 
+              - Sid: CloudWatchLogs
+                Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: 'arn:aws:logs:*:*:*'
+        - PolicyName: DynamoDB_read_write
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement: 
+              - Sid: DynamoDB
+                Effect: Allow
+                Action:
+                  - 'dynamodb:PutItem'
+                  - 'dynamodb:DeleteItem'
+                  - 'dynamodb:GetItem'
+                  - 'dynamodb:Scan'
+                  - 'dynamodb:Query'
+                  - 'dynamodb:UpdateItem'
+                Resource:
+                  - !Join [":", ["arn:aws:dynamodb", !Ref "AWS::Region", !Ref "AWS::AccountId",
+                      !Join ["/", ["table", !Ref ScheduleTableName, "index/*"]]
+                    ]]
+                  - !Join [":", ["arn:aws:dynamodb", !Ref "AWS::Region", !Ref "AWS::AccountId", 
+                      !Join ["/", ["table", !Ref ScheduleTableName]]
+                    ]]
+        - PolicyName: Lambda
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement: 
+              - Sid: lambda
+                Effect: Allow
+                Action: 'lambda:InvokeFunction'
+                Resource:
+                  - !Join [":", ["arn:aws:lambda", !Ref "AWS::Region", !Ref "AWS::AccountId", "function", !Ref SlackLambdaName]]
+                  - !Join [":", ["arn:aws:lambda", !Ref "AWS::Region", !Ref "AWS::AccountId", "function", "InstanceScheduler_*"]]
+        - PolicyName: RDS
+          PolicyDocument: 
+            Version: "2012-10-17"
+            Statement: 
+              - Sid: RDS
+                Effect: Allow
+                Action:
+                  - 'rds:ListTagsForResource'
+                  - 'rds:DescribeDBInstances'
+                  - 'rds:StopDBInstance'
+                  - 'rds:StartDBInstance'
+                Resource: "*"
+
+  ScheduleTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: key
+          AttributeType: S
+      KeySchema:
+        - AttributeName: key
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: '1'
+        WriteCapacityUnits: '1'
+      TableName:
+        Ref: ScheduleTableName
+      TimeToLiveSpecification:
+        AttributeName: TTL
+        Enabled: true
+
+  TaskGenerator:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Ref LambdaCodeKey
+      Runtime: nodejs12.x
+      Timeout: 300
+      Role: !GetAtt MyRole.Arn
+      FunctionName: InstanceScheduler_TaskGenerator
+      Description: "[InstanceScheduler] Task Generator"
+      Handler: index.registerTasks
+      Environment:
+        Variables:
+          ScheduleTableName: !Ref ScheduleTableName
+          utfOffset: !Ref utfOffset
+          RecordTTLInDays: !Ref RecordTTLInDays
+          region: !Ref "AWS::Region"
+          AccountNo: !Ref "AWS::AccountId"
+          SlackLambdaName: !Ref SlackLambdaName
+          SlackChannel: !Ref SlackChannel
+          SlackErrorChannel: !Ref SlackErrorChannel
+          AccountNickName: !Ref AccountNickName
+          SlackIcon: !Ref SlackIcon
+
+  EveryMorningTrigger:
+    Type: AWS::Events::Rule
+    Properties: 
+      Description: 'InstanceScheduler - every morning (8:00 JST, 23:00 UTC)'
+      Name: InstanceScheduler_every-8-o-clock
+      ScheduleExpression: 'cron(0 23 * * ? *)'
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt TaskGenerator.Arn
+          Id: TargetTaskGenerator
+      
+  TriggerPermission1:
+    Type: AWS::Lambda::Permission
+    Properties: 
+      FunctionName: !Ref TaskGenerator
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt EveryMorningTrigger.Arn
+
+  Ticker:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Ref LambdaCodeKey
+      Runtime: nodejs12.x
+      Timeout: 300
+      Role: !GetAtt MyRole.Arn
+      FunctionName: InstanceScheduler_Ticker
+      Description: "[InstanceScheduler] Ticker"
+      Handler: index.processTasks
+      Environment:
+        Variables:
+          ScheduleTableName: !Ref ScheduleTableName
+          utfOffset: !Ref utfOffset
+          RecordTTLInDays: !Ref RecordTTLInDays
+          region: !Ref "AWS::Region"
+          AccountNo: !Ref "AWS::AccountId"
+          SlackLambdaName: !Ref SlackLambdaName
+          SlackChannel: !Ref SlackChannel
+          SlackErrorChannel: !Ref SlackErrorChannel
+          AccountNickName: !Ref AccountNickName
+          SlackIcon: !Ref SlackIcon
+
+  Every5MinutesTrigger:
+    Type: AWS::Events::Rule
+    Properties: 
+      Description: 'InstanceScheduler - every 5 minutes'
+      Name: InstanceScheduler_every-5-minutes
+      ScheduleExpression: 'rate(5 minutes)'
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt Ticker.Arn
+          Id: TargetTicker
+
+  TriggerPermission2:
+    Type: AWS::Lambda::Permission
+    Properties: 
+      FunctionName: !Ref Ticker
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt Every5MinutesTrigger.Arn
+
+  TaskProcessor:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Ref LambdaCodeKey
+      Runtime: nodejs12.x
+      Timeout: 300
+      Role: !GetAtt MyRole.Arn
+      FunctionName: InstanceScheduler_TaskProcessor
+      Description: "[InstanceScheduler] Task Processor"
+      Handler: index.processTask
+      Environment:
+        Variables:
+          ScheduleTableName: !Ref ScheduleTableName
+          utfOffset: !Ref utfOffset
+          RecordTTLInDays: !Ref RecordTTLInDays
+          region: !Ref "AWS::Region"
+          AccountNo: !Ref "AWS::AccountId"
+          SlackLambdaName: !Ref SlackLambdaName
+          SlackChannel: !Ref SlackChannel
+          SlackErrorChannel: !Ref SlackErrorChannel
+          AccountNickName: !Ref AccountNickName
+          SlackIcon: !Ref SlackIcon

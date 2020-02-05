@@ -1,0 +1,49 @@
+{
+  "name": "instance_scheduler",
+  "version": "1.0.0",
+  "description": "AWS Instance Scheduler",
+  "main": "index.js",
+  "scripts": {
+    "start": "node dist/src/cli/index.js",
+    "test": "npx mocha dist/test/test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sanwasystem/instanceScheduler"
+  },
+  "keywords": [],
+  "author": "wak",
+  "license": "MIT",
+  "engines": {
+    "node": ">= 12",
+    "npm": ">= 6.13"
+  },
+  "prettier": {
+    "tabWidth": 2,
+    "printWidth": 120
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.40",
+    "@types/lodash": "^4.14.149",
+    "@types/mocha": "^7.0.1",
+    "@types/node": "^13.7.0",
+    "@typescript-eslint/eslint-plugin": "^2.18.0",
+    "@typescript-eslint/parser": "^2.18.0",
+    "aws-sdk": "^2.610.0",
+    "eslint": "^6.8.0",
+    "eslint-config-prettier": "^6.10.0",
+    "eslint-plugin-import": "^2.20.1",
+    "eslint-plugin-prettier": "^3.1.2",
+    "eslint-plugin-simple-import-sort": "^5.0.1",
+    "mocha": "^7.0.1",
+    "prettier": "^1.19.1",
+    "typescript": "^3.7.5"
+  },
+  "dependencies": {
+    "cron-parser": "^2.13.0",
+    "dotenv": "^8.2.0",
+    "lodash": "^4.17.15",
+    "moment": "^2.24.0",
+    "aws-toolbox": "git+https://github.com/sanwasystem/aws-toolbox.git"
+  }
+}

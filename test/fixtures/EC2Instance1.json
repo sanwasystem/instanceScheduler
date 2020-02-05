@@ -1,0 +1,178 @@
+{
+  "AmiLaunchIndex": 0,
+  "ImageId": "ami-abcdef12",
+  "InstanceId": "i-12345678901234567",
+  "InstanceType": "t2.small",
+  "KeyName": "SSCKey",
+  "LaunchTime": "2020-01-30T21:10:29.000Z",
+  "Monitoring": {
+    "State": "disabled"
+  },
+  "Placement": {
+    "AvailabilityZone": "ap-northeast-1a",
+    "GroupName": "",
+    "Tenancy": "default"
+  },
+  "Platform": "windows",
+  "PrivateDnsName": "ip-172-16-5-11.ap-northeast-1.compute.internal",
+  "PrivateIpAddress": "172.16.5.11",
+  "ProductCodes": [],
+  "PublicDnsName": "",
+  "State": {
+    "Code": 16,
+    "Name": "running"
+  },
+  "StateTransitionReason": "",
+  "SubnetId": "subnet-11111111",
+  "VpcId": "vpc-11111111",
+  "Architecture": "x86_64",
+  "BlockDeviceMappings": [
+    {
+      "DeviceName": "/dev/sda1",
+      "Ebs": {
+        "AttachTime": "2018-01-29T12:25:29.000Z",
+        "DeleteOnTermination": true,
+        "Status": "attached",
+        "VolumeId": "vol-11111111111111111"
+      }
+    },
+    {
+      "DeviceName": "xvdg",
+      "Ebs": {
+        "AttachTime": "2018-01-29T12:25:29.000Z",
+        "DeleteOnTermination": false,
+        "Status": "attached",
+        "VolumeId": "vol-22222222222222222"
+      }
+    },
+    {
+      "DeviceName": "xvdf",
+      "Ebs": {
+        "AttachTime": "2018-01-29T12:25:29.000Z",
+        "DeleteOnTermination": false,
+        "Status": "attached",
+        "VolumeId": "vol-33333333333333333"
+      }
+    }
+  ],
+  "ClientToken": "",
+  "EbsOptimized": false,
+  "Hypervisor": "xen",
+  "ElasticGpuAssociations": [],
+  "ElasticInferenceAcceleratorAssociations": [],
+  "NetworkInterfaces": [
+    {
+      "Attachment": {
+        "AttachTime": "2018-01-29T12:25:28.000Z",
+        "AttachmentId": "eni-attach-d93845bd",
+        "DeleteOnTermination": true,
+        "DeviceIndex": 0,
+        "Status": "attached"
+      },
+      "Description": "Primary network interface",
+      "Groups": [
+        {
+          "GroupName": "LocalAllOpen",
+          "GroupId": "sg-b6a02dcf"
+        }
+      ],
+      "Ipv6Addresses": [],
+      "MacAddress": "06:73:eb:e6:d3:20",
+      "NetworkInterfaceId": "eni-ddec5ae2",
+      "OwnerId": "097400459778",
+      "PrivateIpAddress": "172.16.5.11",
+      "PrivateIpAddresses": [
+        {
+          "Primary": true,
+          "PrivateIpAddress": "172.16.5.11"
+        }
+      ],
+      "SourceDestCheck": true,
+      "Status": "in-use",
+      "SubnetId": "subnet-f0addcb9",
+      "VpcId": "vpc-45895922",
+      "InterfaceType": "interface"
+    }
+  ],
+  "RootDeviceName": "/dev/sda1",
+  "RootDeviceType": "ebs",
+  "SecurityGroups": [
+    {
+      "GroupName": "LocalAllOpen",
+      "GroupId": "sg-b6a02dcf"
+    }
+  ],
+  "SourceDestCheck": true,
+  "Tags": [
+    {
+      "Key": "NameAscii",
+      "Value": "SSCFile2"
+    },
+    {
+      "Key": "AlwaysRunning",
+      "Value": "true"
+    },
+    {
+      "Key": "AmiLifetimeInDays",
+      "Value": "60"
+    },
+    {
+      "Key": "Owner",
+      "Value": "wak"
+    },
+    {
+      "Key": "AutoStartSchedule",
+      "Value": "30 6 * * *"
+    },
+    {
+      "Key": "AutoStopSchedule",
+      "Value": "0 23 * * *"
+    },
+    {
+      "Key": "Project",
+      "Value": "InnerSystem"
+    },
+    {
+      "Key": "AmiSchedule",
+      "Value": "10 3 * * *"
+    },
+    {
+      "Key": "Name",
+      "Value": "ファイルサーバー"
+    }
+  ],
+  "VirtualizationType": "hvm",
+  "CpuOptions": {
+    "CoreCount": 1,
+    "ThreadsPerCore": 1
+  },
+  "CapacityReservationSpecification": {
+    "CapacityReservationPreference": "open"
+  },
+  "HibernationOptions": {
+    "Configured": false
+  },
+  "Licenses": [],
+  "MetadataOptions": {
+    "State": "applied",
+    "HttpTokens": "optional",
+    "HttpPutResponseHopLimit": 1,
+    "HttpEndpoint": "enabled"
+  },
+  "Tag": {
+    "NameAscii": "SSCFile2",
+    "AlwaysRunning": "true",
+    "AmiLifetimeInDays": "60",
+    "Owner": "wak",
+    "AutoStartSchedule": "30 6 * * *",
+    "AutoStopSchedule": "0 23 * * *",
+    "Project": "InnerSystem",
+    "AmiSchedule": "10 3 * * *",
+    "Name": "ファイルサーバー"
+  },
+  "NameTag": "ファイルサーバー",
+  "DescriptionTag": "",
+  "isDetailedMonitoringEnabled": false,
+  "IsRunning": true,
+  "IpAddress": "172.16.5.11"
+}
