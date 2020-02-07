@@ -106,6 +106,7 @@ describe("task generator", () => {
         24,
         moment("2020-02-01T09:00:00+09:00")
       );
+
       assert.equal(startStop.length, 1);
       assert.equal(startStop[0].resourceId, rdsInstance.DBInstanceIdentifier);
       assert.equal(startStop[0].resourceType, "RDS");
@@ -173,22 +174,31 @@ describe("task generator", () => {
       assert.equal(ami2[0].resourceType, "EC2");
       assert.equal(ami2[0].scheduledTime, "2020-02-02T03:10:00+09:00"); // 翌日3:10
     });
+
     it("startStop", () => {
       const startStop = taskGenerator_ec2.generateEC2StartStopAMITasks(
         [ec2Instance],
         24,
         moment("2020-02-01T09:00:00+09:00")
       );
-      assert.equal(startStop.length, 2);
+      // 起動・停止、それぞれにステータスチェックがあるので4件のスケジュールができる
+      assert.equal(startStop.length, 4);
       const start = startStop.filter(x => x.task === "StartEC2")[0];
       const stop = startStop.filter(x => x.task === "StopEC2")[0];
+      const statusCheck = startStop.filter(x => x.task === "EC2StatusCheck");
 
       assert.equal(start.resourceId, ec2Instance.InstanceId);
       assert.equal(stop.resourceId, ec2Instance.InstanceId);
+      assert.equal(statusCheck[0].resourceId, ec2Instance.InstanceId);
+      assert.equal(statusCheck[1].resourceId, ec2Instance.InstanceId);
       assert.equal(start.resourceType, "EC2");
       assert.equal(stop.resourceType, "EC2");
+      assert.equal(statusCheck[0].resourceType, "EC2");
+      assert.equal(statusCheck[1].resourceType, "EC2");
       assert.equal(start.scheduledTime, "2020-02-02T06:30:00+09:00"); // 翌日の6:30
+      assert.equal(statusCheck[0].scheduledTime, "2020-02-02T06:40:00+09:00"); // その10分後
       assert.equal(stop.scheduledTime, "2020-02-01T23:00:00+09:00"); // 当日の23:00
+      assert.equal(statusCheck[1].scheduledTime, "2020-02-01T23:10:00+09:00"); // その10分後
     });
   });
 });
