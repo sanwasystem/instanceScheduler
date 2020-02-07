@@ -89,7 +89,7 @@ export const generateEC2StartStopAMITasks = (
         resourceType: "EC2",
         scheduledTime: util.formatMomentToLocalTime(ten_minutes_after),
         resourceId: x.instanceId,
-        remainingRetryCount: 0,
+        remainingRetryCount: 1,
         statusIsNot: x.task === "StartEC2" ? statusList1 : statusList2,
         TTL: 0,
         lastModified: ""
