@@ -31,6 +31,54 @@ function loadJson<T>(filename: string, typeguards?: (arg: any) => arg is T): T {
   return data as T;
 }
 
+describe("type guards", () => {
+  describe("EC2StatusCheck", () => {
+    it("test1", () => {
+      const task: TaskType.EC2StatusCheck = {
+        key: "",
+        TTL: 0,
+        lastModified: "",
+        remainingRetryCount: 0,
+        resourceId: "i-12345678",
+        resourceType: "EC2",
+        scheduledTime: "",
+        statusIsNot: [0, 80],
+        task: "EC2StatusCheck"
+      };
+      assert.equal(TaskType.isEC2StatusCheck(task), true);
+    });
+
+    it("test2", () => {
+      const task: any = {
+        key: "",
+        TTL: 0,
+        lastModified: "",
+        remainingRetryCount: 0,
+        resourceId: "i-12345678",
+        resourceType: "EC2",
+        scheduledTime: "",
+        statusIsNot: [0, "a"],
+        task: "EC2StatusCheck"
+      };
+      assert.equal(TaskType.isEC2StatusCheck(task), false);
+    });
+    it("test3", () => {
+      const task: any = {
+        key: "",
+        TTL: 0,
+        lastModified: "",
+        remainingRetryCount: 0,
+        resourceId: "i-12345678",
+        resourceType: "EC2",
+        scheduledTime: "",
+        statusIsNot: undefined,
+        task: "EC2StatusCheck"
+      };
+      assert.equal(TaskType.isEC2StatusCheck(task), false);
+    });
+  });
+});
+
 describe("task generator", () => {
   describe("amiDeregistration", () => {
     describe("simplify", () => {
