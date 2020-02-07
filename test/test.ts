@@ -305,26 +305,42 @@ describe("task processor", () => {
 
 describe("ECAlarm", () => {
   describe("ec2alarm", () => {
+    // <<EC2Instance1.json>>
+    // 毎日6時半に起動、23時に停止
+    // AutoStartSchedule: 30 6 * * *
+    // AutoStopSchedule: 0 23 * * *
+    // AlwaysRunning: true
     it("running & has tag", () => {
       // 既にタグが付いている状態
       const ec2Instance = loadJson<toolbox.ec2.Instance>("EC2Instance1.json");
       ec2Instance.InstanceId = "i-running";
       ec2Instance.State = { Code: toolbox.ec2.StatusCode.RUNNING, Name: "running" };
 
-      // タグが付いていてrunningなのでエラー対象ではない
-      const result = ec2alarm._getEc2ToAlarm([ec2Instance]);
+      // 13時でテスト。タグが付いていてrunningなのでエラー対象ではない
+      const result = ec2alarm._getEc2ToAlarm([ec2Instance], moment("2020-02-07T13:00:00+09:00"));
       assert.equal(result.length, 0);
     });
 
-    it("stopped & has tag", () => {
+    it("stopped & has tag #1", () => {
       const ec2Instance = loadJson<toolbox.ec2.Instance>("EC2Instance1.json");
       ec2Instance.InstanceId = "i-stopped";
       ec2Instance.State = { Code: toolbox.ec2.StatusCode.STOPPED, Name: "stopped" };
 
-      // タグが付いていてstoppedなのでエラーになる
-      const result = ec2alarm._getEc2ToAlarm([ec2Instance]);
+      // 13時でテスト。タグが付いていてstoppedなのでエラーになる
+      const result = ec2alarm._getEc2ToAlarm([ec2Instance], moment("2020-02-07T13:00:00+09:00"));
       assert.equal(result.length, 1);
     });
+
+    it("stopped & has tag #2", () => {
+      const ec2Instance = loadJson<toolbox.ec2.Instance>("EC2Instance1.json");
+      ec2Instance.InstanceId = "i-stopped";
+      ec2Instance.State = { Code: toolbox.ec2.StatusCode.STOPPED, Name: "stopped" };
+
+      // 朝5時でテスト。起動時間前なので問題ない
+      const result = ec2alarm._getEc2ToAlarm([ec2Instance], moment("2020-02-07T05:00:00+09:00"));
+      assert.equal(result.length, 0);
+    });
+
 
     it("running & has no tag", () => {
       const ec2Instance = loadJson<toolbox.ec2.Instance>("EC2Instance1.json");
@@ -334,7 +350,7 @@ describe("ECAlarm", () => {
       ec2Instance.Tags = [];
 
       // タグが付いていなくてrunning. どうでもいい
-      const result = ec2alarm._getEc2ToAlarm([ec2Instance]);
+      const result = ec2alarm._getEc2ToAlarm([ec2Instance], moment("2020-02-07T13:00:00+09:00"));
       assert.equal(result.length, 0);
     });
 
@@ -342,10 +358,12 @@ describe("ECAlarm", () => {
       const ec2Instance = loadJson<toolbox.ec2.Instance>("EC2Instance1.json");
       ec2Instance.InstanceId = "i-stopped";
       ec2Instance.State = { Code: toolbox.ec2.StatusCode.STOPPED, Name: "stopped" };
-
-      // タグがfalseになっていてrunning. どうでもいい
       ec2Instance.Tag.AlwaysRunning = "false";
       ec2Instance.Tags = [{ Key: "AlwaysRunning", Value: "false" }];
+
+      // タグがtrueではなくてstopped. どうでもいい
+      const result = ec2alarm._getEc2ToAlarm([ec2Instance], moment("2020-02-07T13:00:00+09:00"));
+      assert.equal(result.length, 0);
     });
   });
 });
@@ -513,6 +531,40 @@ describe("util", () => {
       const result = util.generateInterval("0 11 * * *", 24, moment("2020-11-20T11:30:00+09:00")); // 日本時間で2020/11/20 11:30
       assert.strictEqual(result.length, 1);
       assert.strictEqual(fmt(result[0]), "2020-11-21T11:00:00+09:00"); // 翌日の11:30
+    });
+  });
+
+  describe("getScheduledStatus", () => {
+    // 金曜日14時（日本時間）
+    const now = moment("2020-02-07T14:00:00+09:00");
+
+    it("undefined-undefined", () => {
+      // どちらのタグも指定されていなければ常時起動とみなす
+      const result = util.getScheduledStatus(undefined, undefined, now);
+      assert.equal(result, "RUNNING");
+    });
+
+    it("undefined-valid", () => {
+      // 停止だけ、起動だけは判定なし
+      const result = util.getScheduledStatus(undefined, "0 10 * * *", now);
+      assert.equal(result, undefined);
+    });
+
+    it("valid-undefined", () => {
+      // 停止だけ、起動だけは判定なし
+      const result = util.getScheduledStatus("0 10 * * *", undefined, now);
+      assert.equal(result, undefined);
+    });
+
+    it("10:00 start, 15:00 stop", () => {
+      const result = util.getScheduledStatus("0 10 * * *", "0 15 * * *", now);
+      assert.equal(result, "RUNNING");
+    });
+
+    it("thursday 10:00 start, 15:00 everyday stop", () => {
+      // 木曜日の10時に起動、毎日15時に停止
+      const result = util.getScheduledStatus("0 10 4 * *", "0 15 * * *", now);
+      assert.equal(result, "STOPPED");
     });
   });
 });

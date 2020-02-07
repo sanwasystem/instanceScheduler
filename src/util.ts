@@ -2,6 +2,7 @@ import * as env from "./env/index";
 import * as cronParser from "cron-parser";
 import moment from "moment";
 import { Instance } from "aws-toolbox/dist/src/ec2";
+import * as _ from "lodash";
 
 /**
  * momentインスタンスを 2020-12-31T23:59:59+09:00 の形式でフォーマットする
@@ -125,16 +126,15 @@ export const validateCronExpression = (cronExpression: string | undefined | null
 /**
  * 与えられた文字列が validateCronExpression() のチェックを通ることを前提に、【基準日時】から直近25時間のスケジュールを返す
  * @param cronExpression cron
- * @param hours スケジュールを返す範囲を時間で指定する。省略時は25時間
- * @param now 【基準日時】を指定する。省略時は現在日時
+ * @param hours スケジュールを返す範囲を時間で指定する
+ * @param now 【基準日時】を指定する
  * @returns スケジュール（momentインスタンスの配列）
  */
-export const generateInterval = (cronExpression: string, hours = 25, now?: moment.Moment): moment.Moment[] => {
+export const generateInterval = (cronExpression: string, hours: number, now: moment.Moment): moment.Moment[] => {
   if (cronExpression === "") {
     return [];
   }
   const result: moment.Moment[] = [];
-  now = now || moment();
   const end = now.clone();
   end.add(hours, "hours");
   const options = {
@@ -183,3 +183,57 @@ export function generateTask<TaskName>(
     };
   });
 }
+
+/**
+ * AutoStartScheduleとAutoStopScheduleタグの値から、指定した時点でそのインスタンスは停止しているべきか起動しているべきかを返す
+ * @param startSchedule AutoStartScheduleタグの値（未設定ならundefined）
+ * @param stopSchedule AutoStopScheduleタグの値（未設定ならundefined）
+ * @param now
+ */
+export const getScheduledStatus = (
+  startSchedule: string | undefined,
+  stopSchedule: string | undefined,
+  now: moment.Moment
+): "STOPPED" | "RUNNING" | undefined => {
+  // どちらも定義されていなければ常時起動
+  if (startSchedule === undefined && stopSchedule === undefined) {
+    return "RUNNING";
+  }
+
+  // どちらかだけ定義されていれば判定なし
+  if (startSchedule === undefined || stopSchedule === undefined) {
+    return undefined;
+  }
+
+  // cron書式（と回数）チェックを行う。どちらか通らなければ判定なし
+  if (!validateCronExpression(startSchedule) || !validateCronExpression(stopSchedule)) {
+    return undefined;
+  }
+
+  // これでAutoStartScheduleとAutoStopScheduleの両方が設定されていることが確実になった
+  const from = moment(now).add(-7, "days");
+
+  const lastStart = _.last(generateInterval(startSchedule, 7 * 24, from));
+  const lastStop = _.last(generateInterval(stopSchedule, 7 * 24, from));
+
+  if (lastStart === undefined && lastStop === undefined) {
+    return undefined;
+  }
+
+  if (lastStart === undefined) {
+    return "STOPPED";
+  }
+  if (lastStop === undefined) {
+    return "RUNNING";
+  }
+
+  const diff = lastStart.diff(lastStop);
+  if (diff > 0) {
+    // 最後の起動時間の方が後
+    return "RUNNING";
+  } else if (diff === 0) {
+    return undefined;
+  } else {
+    return "STOPPED";
+  }
+};
