@@ -32,7 +32,7 @@ export const isStartStopEC2 = (_arg: any): _arg is StartStopEC2 => {
     return false;
   }
   const arg = _arg as any;
-  if (arg.task != "StopEC2" && arg.task !== "StartEC2") {
+  if (arg.task !== "StopEC2" && arg.task !== "StartEC2") {
     return false;
   }
   if (arg.resourceType != "EC2") {
@@ -49,7 +49,7 @@ export const isRegisterAmi = (_arg: any): _arg is RegisterAmi => {
     return false;
   }
   const arg = _arg as any;
-  if (arg.task != "RegisterAmi") {
+  if (arg.task !== "RegisterAmi") {
     return false;
   }
   if (arg.resourceType != "EC2") {
@@ -69,7 +69,7 @@ export const isAddAmiTag = (_arg: any): _arg is AddAmiTag => {
     return false;
   }
   const arg = _arg as any;
-  if (arg.task != "AddAmiTag") {
+  if (arg.task !== "AddAmiTag") {
     return false;
   }
   if (arg.resourceType != "AMI") {
@@ -97,7 +97,7 @@ export const isDeregisterAmi = (_arg: any): _arg is DeregisterAmi => {
     return false;
   }
   const arg = _arg as any;
-  if (arg.task != "DeregisterAmi") {
+  if (arg.task !== "DeregisterAmi") {
     return false;
   }
   if (arg.resourceType != "AMI") {
@@ -122,10 +122,30 @@ export const isStartStopRDS = (_arg: any): _arg is StartStopRDS => {
     return false;
   }
   const arg = _arg as any;
-  if (arg.task != "StopRDS" && arg.task !== "StartRDS") {
+  if (arg.task !== "StopRDS" && arg.task !== "StartRDS") {
     return false;
   }
   if (arg.resourceType != "RDS") {
+    return false;
+  }
+  return true;
+};
+
+export const isEC2StatusCheck = (_arg: any): _arg is EC2StatusCheck => {
+  if (!_isTaskRecordBase(_arg)) {
+    return false;
+  }
+  const arg = _arg as any;
+  if (arg.task !== "EC2StatusCheck") {
+    return false;
+  }
+  if (arg.resourceType !== "EC2") {
+    return false;
+  }
+  if (!Array.isArray(arg.statusIsNot)) {
+    return false;
+  }
+  if (arg.statusIsNot.some((x: any) => typeof x !== "number")) {
     return false;
   }
   return true;
@@ -243,8 +263,32 @@ export interface StartStopRDS extends _TaskRecordBase {
   resourceType: "RDS";
 }
 
-export type TaskRecord = StartStopEC2 | RegisterAmi | AddAmiTag | DeregisterAmi | StartStopRDS;
+export interface EC2StatusCheck extends _TaskRecordBase {
+  /**
+   * 実行すべきタスク
+   */
+  task: "EC2StatusCheck";
+
+  /**
+   * 処理対象のリソース
+   */
+  resourceType: "EC2";
+
+  /**
+   * ステータスがこの値だったらエラーとする
+   */
+  statusIsNot: number[];
+}
+
+export type TaskRecord = StartStopEC2 | RegisterAmi | AddAmiTag | DeregisterAmi | StartStopRDS | EC2StatusCheck;
 
 export const isTaskRecordOnDb = (arg: any): arg is TaskRecord => {
-  return isStartStopEC2(arg) || isRegisterAmi(arg) || isAddAmiTag(arg) || isDeregisterAmi(arg) || isStartStopRDS(arg);
+  return (
+    isStartStopEC2(arg) ||
+    isRegisterAmi(arg) ||
+    isAddAmiTag(arg) ||
+    isDeregisterAmi(arg) ||
+    isStartStopRDS(arg) ||
+    isEC2StatusCheck(arg)
+  );
 };

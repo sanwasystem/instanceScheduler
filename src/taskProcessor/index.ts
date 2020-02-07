@@ -1,6 +1,7 @@
 import * as TaskTypes from "../types/task";
 import * as Types from "../types/index";
 import * as ec2startStop from "./ec2startStop";
+import * as ec2statusCheck from "./ec2statusCheck";
 import * as ami1 from "./amiRegistration";
 import * as ami2 from "./amiModification";
 import * as rds from "./rds";
@@ -12,6 +13,9 @@ export const processTask = async (task: TaskTypes.TaskRecord): Promise<boolean |
 
     case "StopEC2":
       return await ec2startStop.startStop(task);
+
+    case "EC2StatusCheck":
+      return await ec2statusCheck.statusCheck(task);
 
     case "RegisterAmi":
       return await ami1.createAMI(task);
