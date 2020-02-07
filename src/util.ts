@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import * as env from "./env/index";
 import * as cronParser from "cron-parser";
 import moment from "moment";
@@ -236,4 +237,11 @@ export const getScheduledStatus = (
   } else {
     return "STOPPED";
   }
+};
+
+/**
+ * 到達しないはずの場所で return の値として呼び出す
+ */
+export const neverComesHere = (obj: never): never => {
+  throw new Error("到達しないはずのコード");
 };

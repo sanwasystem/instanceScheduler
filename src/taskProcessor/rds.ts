@@ -6,6 +6,7 @@ import * as AWS from "aws-sdk";
 import * as env from "../env/index";
 import * as TaskTypes from "../types/task";
 import * as Types from "../types/index";
+import * as util from "../util";
 
 const STATE_RUNNING = "available";
 const STATE_STOPPED = "stopped";
@@ -54,6 +55,54 @@ const getDbInstanceStateById = async (name: string): Promise<string | null> => {
   }
 };
 
+const startRds = async (instanceState: string, instanceId: string): Promise<Types.TaskResultType> => {
+  try {
+    if (instanceState !== STATE_STOPPED) {
+      return {
+        result: "OK",
+        reason: `RDSインスタンス ${instanceId} は停止状態(${STATE_STOPPED})ではなかったので何もしません(${instanceState})`
+      };
+    }
+
+    console.log(`RDSインスタンス ${instanceId} を起動します`);
+    await rds.startDBInstance({ DBInstanceIdentifier: instanceId }).promise();
+    return {
+      result: "OK",
+      reason: "起動しました"
+    };
+  } catch (e) {
+    console.error(e);
+    return {
+      result: "ERROR",
+      reason: e.toString()
+    };
+  }
+};
+
+const stoptRds = async (instanceState: string, instanceId: string): Promise<Types.TaskResultType> => {
+  try {
+    if (instanceState !== STATE_RUNNING) {
+      return {
+        result: "OK",
+        reason: `RDSインスタンス ${instanceId} は起動中(${STATE_RUNNING})ではなかったので何もしません(${instanceState})`
+      };
+    }
+
+    console.log(`RDSインスタンス ${instanceId} を停止します`);
+    await rds.stopDBInstance({ DBInstanceIdentifier: instanceId }).promise();
+    return {
+      result: "OK",
+      reason: "停止しました"
+    };
+  } catch (e) {
+    console.error(e);
+    return {
+      result: "ERROR",
+      reason: e.toString()
+    };
+  }
+};
+
 /**
  * RDSインスタンスを起動・停止する
  */
@@ -73,65 +122,21 @@ export const startStop = async (task: TaskTypes.StartStopRDS): Promise<Types.Tas
     };
   }
 
-  if (task.task === "StartRDS") {
-    try {
-      if (instanceState !== STATE_STOPPED) {
-        return {
-          result: "OK",
-          reason: `RDSインスタンス ${task.resourceId} は停止状態(${STATE_STOPPED})ではなかったので何もしません(${instanceState})`
-        };
-      }
-
-      if (isTestId(task.resourceId)) {
-        return {
-          result: "OK",
-          reason: "テスト用IDなので何もしません"
-        };
-      }
-
-      console.log(`RDSインスタンス ${task.resourceId} を起動します`);
-      await rds.startDBInstance({ DBInstanceIdentifier: task.resourceId }).promise();
-      return {
-        result: "OK",
-        reason: "起動しました"
-      };
-    } catch (e) {
-      console.error(e);
-      return {
-        result: "ERROR",
-        reason: e.toString()
-      };
-    }
-  } else if (task.task === "StopRDS") {
-    try {
-      if (instanceState !== STATE_RUNNING) {
-        return {
-          result: "OK",
-          reason: `RDSインスタンス ${task.resourceId} は起動中(${STATE_RUNNING})ではなかったので何もしません(${instanceState})`
-        };
-      }
-
-      if (isTestId(task.resourceId)) {
-        return {
-          result: "OK",
-          reason: "テスト用IDなので何もしません"
-        };
-      }
-
-      console.log(`RDSインスタンス ${task.resourceId} を停止します`);
-      await rds.stopDBInstance({ DBInstanceIdentifier: task.resourceId }).promise();
-      return {
-        result: "OK",
-        reason: "停止しました"
-      };
-    } catch (e) {
-      console.error(e);
-      return {
-        result: "ERROR",
-        reason: e.toString()
-      };
-    }
+  if (isTestId(task.resourceId)) {
+    return {
+      result: "OK",
+      reason: "テスト用IDなので何もしません"
+    };
   }
 
-  throw new Error("ここには来ない");
+  switch (task.task) {
+    case "StartRDS":
+      return await startRds(instanceState, task.resourceId);
+
+    case "StopRDS":
+      return await stoptRds(instanceState, task.resourceId);
+
+    default:
+      return util.neverComesHere(task.task);
+  }
 };

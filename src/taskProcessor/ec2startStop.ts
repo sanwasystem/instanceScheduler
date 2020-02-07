@@ -7,6 +7,7 @@ import * as env from "../env/index";
 import * as TaskTypes from "../types/task";
 import * as Types from "../types/index";
 import * as toolbox from "aws-toolbox";
+import * as util from "../util";
 import { Instance, StatusCode } from "aws-toolbox/dist/src/ec2";
 const ec2 = new AWS.EC2({ region: env.region });
 
@@ -210,6 +211,6 @@ export const startStop = async (task: TaskTypes.StartStopEC2): Promise<Types.Tas
       }
 
     default:
-      throw new Error("ここには来ない");
+      return util.neverComesHere(statusCheckResult[0]);
   }
 };

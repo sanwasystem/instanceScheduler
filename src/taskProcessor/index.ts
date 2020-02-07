@@ -5,6 +5,7 @@ import * as ec2statusCheck from "./ec2statusCheck";
 import * as ami1 from "./amiRegistration";
 import * as ami2 from "./amiModification";
 import * as rds from "./rds";
+import * as util from "../util";
 
 export const processTask = async (task: TaskTypes.TaskRecord): Promise<boolean | Types.TaskResultType> => {
   switch (task.task) {
@@ -33,6 +34,6 @@ export const processTask = async (task: TaskTypes.TaskRecord): Promise<boolean |
       return await rds.startStop(task);
 
     default:
-      throw new Error("想定していないタスクが来ました");
+      return util.neverComesHere(task);
   }
 };

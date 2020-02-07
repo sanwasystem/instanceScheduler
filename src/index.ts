@@ -9,6 +9,7 @@ import { processTask } from "./taskProcessor";
 import * as taskIO from "./taskIO";
 import * as slack from "./slack";
 import * as ec2alarm from "./ec2alarm";
+import * as util from "./util";
 import moment from "moment";
 
 const lambda = new AWS.Lambda({ region: env.region });
@@ -98,7 +99,7 @@ exports.processTask = async (event: any, context: LambdaTypes.Context): Promise<
         return false;
 
       default:
-        throw new Error("ここには来ない");
+        return util.neverComesHere(result.result);
     }
   }
 };
