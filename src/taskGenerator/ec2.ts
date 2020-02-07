@@ -14,37 +14,6 @@ const ec2 = new AWS.EC2({ region: env.region });
 type TaskName = "StopEC2" | "StartEC2" | "RegisterAmi";
 
 /**
- * 与えたインスタンスとタグ名からタスクを生成する。何もすることがなければ空の配列を返す
- * @param instance インスタンス
- * @param tagName "AutoStopSchedule"など
- * @param taskName
- * @param hours タスクを生成する範囲（時間）
- * @param now タスクを生成する基準となる日時
- */
-function generateTask<TaskName>(
-  instance: toolbox.ec2.Instance,
-  tagName: string,
-  taskName: TaskName,
-  hours: number,
-  now: moment.Moment
-): {
-  instanceId: string;
-  task: TaskName;
-  schedule: moment.Moment;
-}[] {
-  if (!util.validateCronExpression(instance.Tag[tagName])) {
-    return [];
-  }
-  return util.generateInterval(instance.Tag[tagName], hours, now).map(schedule => {
-    return {
-      instanceId: instance.InstanceId,
-      task: taskName,
-      schedule: schedule
-    };
-  });
-}
-
-/**
  * EC2インスタンスのタグ情報から今後25時間のAMI登録タスクを生成する
  * @param instances EC2インスタンス
  * @param forceToReboot AMI作成時に強制リブートをかけるならtrue
@@ -58,7 +27,7 @@ export const generateAmiRegistrationTasks = (
   now: moment.Moment
 ): Types.RegisterAmi[] => {
   const tagName = forceToReboot ? "AmiSchedule_ForceToReboot" : "AmiSchedule";
-  const source = instances.map(x => generateTask<"RegisterAmi">(x, tagName, "RegisterAmi", hours, now)).flat();
+  const source = instances.map(x => util.generateTask<"RegisterAmi">(x, tagName, "RegisterAmi", hours, now)).flat();
 
   return source.map(x => {
     return {
@@ -87,9 +56,11 @@ export const generateEC2StartStopAMITasks = (
   now: moment.Moment
 ): Types.StartStopEC2[] => {
   const start = instances.map(x =>
-    generateTask<"StartEC2" | "StopEC2">(x, "AutoStartSchedule", "StartEC2", hours, now)
+    util.generateTask<"StartEC2" | "StopEC2">(x, "AutoStartSchedule", "StartEC2", hours, now)
   );
-  const stop = instances.map(x => generateTask<"StartEC2" | "StopEC2">(x, "AutoStopSchedule", "StopEC2", hours, now));
+  const stop = instances.map(x =>
+    util.generateTask<"StartEC2" | "StopEC2">(x, "AutoStopSchedule", "StopEC2", hours, now)
+  );
 
   const source = start.flat().concat(stop.flat());
 

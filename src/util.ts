@@ -152,3 +152,34 @@ export const generateInterval = (cronExpression: string, hours = 25, now?: momen
 
   return result;
 };
+
+/**
+ * 与えたインスタンスとタグ名からタスクを生成する。何もすることがなければ空の配列を返す
+ * @param instance インスタンス
+ * @param tagName "AutoStopSchedule"など
+ * @param taskName
+ * @param hours タスクを生成する範囲（時間）
+ * @param now タスクを生成する基準となる日時
+ */
+export function generateTask<TaskName>(
+  instance: Instance,
+  tagName: string,
+  taskName: TaskName,
+  hours: number,
+  now: moment.Moment
+): {
+  instanceId: string;
+  task: TaskName;
+  schedule: moment.Moment;
+}[] {
+  if (!validateCronExpression(instance.Tag[tagName])) {
+    return [];
+  }
+  return generateInterval(instance.Tag[tagName], hours, now).map(schedule => {
+    return {
+      instanceId: instance.InstanceId,
+      task: taskName,
+      schedule: schedule
+    };
+  });
+}
