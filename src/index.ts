@@ -1,4 +1,4 @@
-// InstanceScheduler v1.1.0
+// InstanceScheduler v1.1.1
 // https://github.com/sanwasystem/instance-scheduler
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import * as AWS from "aws-sdk";
@@ -54,7 +54,7 @@ exports.processTasks = async (event: any, context: LambdaTypes.Context): Promise
   const alarm = await ec2alarm.getEc2ToAlarm();
   if (alarm.length > 0) {
     const lines = alarm.map(x => `* ID: ${x.InstanceId} Name: ${x.NameTag} IpAddress: ${x.IpAddress}`);
-    const message = ["AlwaysRunning（常時起動）タグが付いているのに停止しているインスタンスがあります", ...lines].join(
+    const message = ["AlwaysRunning（常時起動）タグがtrueなのに停止しているインスタンスがあります", ...lines].join(
       "\r\n"
     );
     await slack.error(message);
@@ -74,17 +74,19 @@ exports.processTask = async (event: any, context: LambdaTypes.Context): Promise<
   console.log("次のタスクを処理します:");
   console.log(task);
   const result = await processTask(task);
-  await slack.log(`タスクの内容: ${JSON.stringify(task)}, 結果: ${result.result}, 理由: ${result.reason}`);
   switch (result.result) {
     case "OK":
+      await slack.log(`タスクの内容: ${JSON.stringify(task)}, 結果: ${result.result}, 理由: ${result.reason}`);
       await taskIO.removeTask(task);
       return true;
 
     case "ERROR":
+      await slack.error(`タスクの内容: ${JSON.stringify(task)}, 結果: ${result.result}, 理由: ${result.reason}`);
       await taskIO.removeTask(task);
       return false;
 
     case "RETRY":
+      await slack.error(`タスクの内容: ${JSON.stringify(task)}, 結果: ${result.result}, 理由: ${result.reason}`);
       await taskIO.decrementRetryCount(task);
       return false;
 
