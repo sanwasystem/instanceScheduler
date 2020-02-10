@@ -4,7 +4,9 @@
 
 import * as AWS from "aws-sdk";
 import * as env from "../env/index";
-import * as Types from "../types/task";
+import * as TaskTypes from "../types/task";
+import * as Types from "../types";
+
 const ec2 = new AWS.EC2({ region: env.region });
 
 type TestIdsType = {
@@ -38,10 +40,10 @@ export const TEST_IDS: TestIdsType = {
 /**
  * AMIにタグを付ける
  */
-export const addTags = async (task: Types.AddAmiTag): Promise<boolean> => {
+export const addTags = async (task: TaskTypes.AddAmiTag): Promise<Types.TaskResultType> => {
   if (env.dryRun) {
     console.log("dryRunが指定されているので何もしません");
-    return true;
+    return { result: "OK", reason: "dryRun" };
   }
 
   try {
@@ -51,17 +53,20 @@ export const addTags = async (task: Types.AddAmiTag): Promise<boolean> => {
     }
     if (task.resourceId === TEST_IDS.AMI_ID_OK) {
       console.log("テスト用AMI IDが見つかりました。タグ追加はスキップして成功したことにします");
-      return true;
+      return { result: "OK", reason: "dryRun" };
     }
 
     const tags = task.tags.map(x => `${x.Key}=${x.Value}`).join(", ");
     console.log(`${task.resourceId} にタグを追加します: ${tags}`);
     await ec2.createTags({ Resources: [task.resourceId], Tags: task.tags }).promise();
 
-    return true;
+    return { result: "OK", reason: "OK" };
   } catch (e) {
     console.error("タグ追加に失敗しました。次回リトライします");
-    return false;
+    return {
+      result: "RETRY",
+      reason: e.toString()
+    };
   }
 };
 
@@ -122,19 +127,30 @@ const deleteSnapshot = async (snapshotId: string): Promise<boolean> => {
  * AMIを登録解除し、紐付くスナップショットも削除する
  * @param task
  */
-export const deleteAmi = async (task: Types.DeregisterAmi): Promise<boolean> => {
+export const deleteAmi = async (task: TaskTypes.DeregisterAmi): Promise<Types.TaskResultType> => {
   const amiResult = await deregisterAmi(task.resourceId);
-  let allOk = true;
+  let amiDeregistrationOk = true;
+  let snapshotDeletionAllOk = true;
 
   if (!amiResult) {
-    allOk = false;
+    amiDeregistrationOk = false;
     console.error("AMI登録解除には失敗しましたがスナップショット削除を試みます");
   }
 
   for (const snapshotId of task.snapshotIds) {
     const snapshotReuslt = await deleteSnapshot(snapshotId);
-    allOk = allOk && snapshotReuslt;
+    snapshotDeletionAllOk = snapshotDeletionAllOk && snapshotReuslt;
   }
 
-  return allOk;
+  if (amiDeregistrationOk && snapshotDeletionAllOk) {
+    return { result: "OK", reason: "AMI登録解除・スナップショット削除成功" };
+  }
+
+  if (!amiDeregistrationOk) {
+    return { result: "RETRY", reason: "AMI登録解除失敗" };
+  }
+  if (!snapshotDeletionAllOk) {
+    return { result: "RETRY", reason: "AMI登録解除成功、スナップショット削除失敗" };
+  }
+  return { result: "RETRY", reason: "AMI登録解除もスナップショット削除も失敗" };
 };

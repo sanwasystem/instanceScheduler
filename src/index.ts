@@ -74,35 +74,21 @@ exports.processTask = async (event: any, context: LambdaTypes.Context): Promise<
   console.log("次のタスクを処理します:");
   console.log(task);
   const result = await processTask(task);
-  if (typeof result === "boolean") {
-    if (result) {
-      // 成功した
-      console.log("タスクは成功しました");
+  await slack.log(`タスクの内容: ${JSON.stringify(task)}, 結果: ${result.result}, 理由: ${result.reason}`);
+  switch (result.result) {
+    case "OK":
       await taskIO.removeTask(task);
       return true;
-    } else {
-      console.log("タスクは失敗しました");
-      // 失敗した。リトライする（リトライカウンタが0だったら削除する）
+
+    case "ERROR":
+      await taskIO.removeTask(task);
+      return false;
+
+    case "RETRY":
       await taskIO.decrementRetryCount(task);
       return false;
-    }
-  } else {
-    await slack.log(`タスクの内容: ${JSON.stringify(task)}, 結果: ${result.result}, 理由: ${result.reason}`);
-    switch (result.result) {
-      case "OK":
-        await taskIO.removeTask(task);
-        return true;
 
-      case "ERROR":
-        await taskIO.removeTask(task);
-        return false;
-
-      case "RETRY":
-        await taskIO.decrementRetryCount(task);
-        return false;
-
-      default:
-        return util.neverComesHere(result.result);
-    }
+    default:
+      return util.neverComesHere(result.result);
   }
 };

@@ -7,7 +7,7 @@ import * as ami2 from "./amiModification";
 import * as rds from "./rds";
 import * as util from "../util";
 
-export const processTask = async (task: TaskTypes.TaskRecord): Promise<boolean | Types.TaskResultType> => {
+export const processTask = async (task: TaskTypes.TaskRecord): Promise<Types.TaskResultType> => {
   switch (task.task) {
     case "StartEC2":
       return await ec2startStop.startStop(task);
