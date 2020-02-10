@@ -10,6 +10,7 @@ import * as taskIO from "./taskIO";
 import * as slack from "./slack";
 import * as ec2alarm from "./ec2alarm";
 import * as util from "./util";
+import * as _ from "lodash";
 import moment from "moment";
 
 const lambda = new AWS.Lambda({ region: env.region });
@@ -19,7 +20,9 @@ const lambda = new AWS.Lambda({ region: env.region });
  */
 exports.registerTasks = async (event: any, context: LambdaTypes.Context): Promise<boolean> => {
   const tasks = await generateTasks(25, moment());
-  console.log(`今後25時間分の${tasks.length}件のタスクを生成しました`);
+  const grouped = _.groupBy(tasks, "task");
+  const counts = Object.keys(grouped).map(x => `${x}: ${grouped[x].length} 件`);
+  await slack.log(`今後25時間分の${tasks.length}件のタスクを生成しました\n` + counts.join("\n"));
   for (const task of tasks) {
     console.log(task);
     await taskIO.putTask(task);
@@ -84,7 +87,7 @@ exports.processTask = async (event: any, context: LambdaTypes.Context): Promise<
       return false;
     }
   } else {
-    console.log(`タスクの結果: ${result.result}, 理由: ${result.reason}`);
+    await slack.log(`タスクの内容: ${JSON.stringify(task)}, 結果: ${result.result}, 理由: ${result.reason}`);
     switch (result.result) {
       case "OK":
         await taskIO.removeTask(task);
