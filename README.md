@@ -25,7 +25,7 @@ EC2インスタンス・RDSインスタンスに付加されたタグにした�
 動作ログやアラートはSlackに流すことを前提としている。事前に次の作業を済ませておくこと。
 
 * SlackでIncoming Webhookを作成
-* `SlackApiProxy` をインストール
+* [SlackApiProxy](https://github.com/sanwasystem/slack_api_proxy) をインストール（API Gatewayは不要）
 * ログ通知用、アラート通知用チャンネルを作成
 
 # 処理概要
