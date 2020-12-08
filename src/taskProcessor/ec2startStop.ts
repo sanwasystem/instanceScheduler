@@ -186,8 +186,9 @@ export const startStop = async (task: TaskTypes.StartStopEC2): Promise<Types.Tas
             reason: "テスト用ID"
           };
         }
-
-        const result = await toolbox.ec2.startStopInstance(ec2, task.resourceId, startIfTrue ? "START" : "STOP");
+        // 2秒ごとに最大15秒待つ
+        const MAX_WAIT_TIME_TIME_IN_SEC = 15;
+        const result = await toolbox.ec2.startStopInstance(ec2, task.resourceId, startIfTrue ? "START" : "STOP", 2, MAX_WAIT_TIME_TIME_IN_SEC);
         switch (result[0]) {
           case "error":
             return { result: "ERROR", reason: result[1] };
@@ -196,7 +197,7 @@ export const startStop = async (task: TaskTypes.StartStopEC2): Promise<Types.Tas
           case "ok":
             return { result: "OK", reason: "OK" };
           case "timeout":
-            return { result: "RETRY", reason: "規定の時間内に状態が変わりませんでした" };
+            return { result: "RETRY", reason: `規定の時間(${MAX_WAIT_TIME_TIME_IN_SEC}秒)に状態が変わりませんでした` };
           case "skip":
             return { result: "OK", reason: "nothing to do" }; // 既にチェック済みなのでここには来ない
           default:

@@ -33,7 +33,7 @@ exports.registerTasks = async (event: any, context: LambdaTypes.Context): Promis
 
 /**
  * 1. 起動しているはずのEC2が停止していたら（runnningではなかったら）アラートを出す
- * 2. D2ynamoDBから実行すべきスケジュールを取得して別のLambdaに渡して処理する
+ * 2. DynamoDBから実行すべきスケジュールを取得して別のLambdaに渡して処理する
  */
 exports.processTasks = async (event: any, context: LambdaTypes.Context): Promise<void> => {
   // 処理すべきタスクを取得し、別Lambdaに渡して処理させる
